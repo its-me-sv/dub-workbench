@@ -15,7 +15,7 @@ function ThemeProvider({
       disableTransitionOnChange
       {...props}
     >
-      <ThemeHotkey />
+      {/* <ThemeHotkey /> */}
       {children}
     </NextThemesProvider>
   )
@@ -34,6 +34,7 @@ function isTypingTarget(target: EventTarget | null) {
   )
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ThemeHotkey() {
   const { resolvedTheme, setTheme } = useTheme()
 
