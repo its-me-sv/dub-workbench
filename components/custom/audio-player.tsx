@@ -20,6 +20,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
   const [isPlaying, setIsPlaying] = useState(false)
   const [totalDuration, setDuration] = useState(0)
   const [currDuration, setCurrDuration] = useState(0)
+  const [currSpeed, setCurrSpeed] = useState("1")
 
   const handleChangeFileClick = () => {
     fileInputRef.current?.click()
@@ -43,21 +44,37 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
   }
 
   const handleRewind = async () => {
-    if (!currDuration) return
-
     const audio = audioRef.current
     if (!audio) return
 
-    audio.currentTime = audio.currentTime - 10
+    const nextStep = audio.currentTime - 10 < 0 ? 0 : audio.currentTime - 10
+    audio.currentTime = nextStep
   }
 
   const handleForward = async () => {
-    if (totalDuration - currDuration < 10) return
-
     const audio = audioRef.current
     if (!audio) return
 
-    audio.currentTime = audio.currentTime + 10
+    const nextStep =
+      audio.currentTime + 10 > totalDuration
+        ? totalDuration
+        : audio.currentTime + 10
+    audio.currentTime = nextStep
+  }
+
+  const handleSliderChange = (value: number[]) => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    audio.currentTime = value[0]
+  }
+
+  const handleSpeedChange = (value: string) => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    audio.playbackRate = Number(value)
+    setCurrSpeed(value)
   }
 
   useEffect(() => {
@@ -68,7 +85,10 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
 
     audioRef.current = audioElement
 
-    const handleOnLoadMetadata = () => setDuration(audioElement.duration)
+    const handleOnLoadMetadata = () => {
+      setDuration(audioElement.duration)
+      setCurrDuration(0)
+    }
     const handleOnTimeUpdate = () => setCurrDuration(audioElement.currentTime)
 
     const handlePlay = () => setIsPlaying(true)
@@ -127,10 +147,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
       </div>
       <CardFooter className="flex-col gap-(--card-spacing)">
         <div className="flex w-full flex-col gap-1">
-          <Slider value={[currDuration]} max={totalDuration} />
+          <Slider
+            value={[currDuration]}
+            max={totalDuration}
+            onValueChange={handleSliderChange}
+          />
           <div className="flex w-full items-center justify-between text-sm tracking-wide text-muted-foreground">
             <span>{formatSeconds(currDuration)}</span>
-            <span>{formatSeconds(totalDuration)}</span>
+            <span>{formatSeconds(totalDuration - currDuration + 1)}</span>
           </div>
         </div>
         <div className="flex w-full items-center justify-between">
@@ -140,7 +164,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
               size="icon"
               className="rounded-full"
               onClick={handleRewind}
-              disabled={!currDuration}
             >
               <HugeiconsIcon
                 icon={GoBackward10SecIcon}
@@ -174,16 +197,26 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
               size="icon"
               className="rounded-full"
               onClick={handleForward}
-              disabled={totalDuration - currDuration < 10}
             >
               <HugeiconsIcon icon={GoForward10SecIcon} color="var(--primary)" />
             </Button>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Speed</span>
-            <ToggleGroup type="single" size="sm" variant="outline" spacing={0}>
+            <ToggleGroup
+              type="single"
+              size="sm"
+              variant="outline"
+              spacing={0}
+              value={currSpeed}
+              onValueChange={handleSpeedChange}
+            >
               {SPEEDS.map(String).map((speed) => (
-                <ToggleGroupItem key={speed} value={speed}>
+                <ToggleGroupItem
+                  key={speed}
+                  value={speed}
+                  className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                >
                   {speed}
                 </ToggleGroupItem>
               ))}
