@@ -76,7 +76,10 @@ export const generateWaveform = (
   const centerVertical = height / 2
 
   ctx.clearRect(0, 0, width, height)
-  ctx.fillStyle = "#434a"
+  const primaryColor = getComputedStyle(canvas)
+    .getPropertyValue("--primary")
+    .trim()
+  ctx.fillStyle = primaryColor || "#000000"
 
   const { maxs, mins } = waveforms
   const barWidth = width / maxs.length

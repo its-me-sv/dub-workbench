@@ -19,6 +19,7 @@ import {
   generateWaveform,
   getMonoChannelData,
 } from "@/lib/utils"
+import { Skeleton } from "../ui/skeleton"
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -233,14 +234,21 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
           />
         </>
       </CardHeader>
-      <div
-        ref={waveformContainerRef}
-        className="mx-(--card-spacing) flex h-[14svh] items-center justify-center rounded-xl border-2 border-dotted border-border"
-      >
-        <canvas ref={waveformCanvasRef} className="h-full w-full" />
-      </div>
       <CardFooter className="flex-col gap-(--card-spacing)">
         <div className="flex w-full flex-col gap-1">
+          <div
+            ref={waveformContainerRef}
+            className="flex h-[14svh] items-center justify-center"
+          >
+            {isChannelDataReady ? (
+              <canvas
+                ref={waveformCanvasRef}
+                className="h-full w-full bg-muted/30"
+              />
+            ) : (
+              <Skeleton className="h-full w-full rounded-none" />
+            )}
+          </div>
           <Slider
             value={[currDuration]}
             max={totalDuration}

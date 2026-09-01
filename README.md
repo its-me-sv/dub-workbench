@@ -12,12 +12,12 @@ Everything here is written from scratch. No player library, no waveform library.
 
 ## Status
 
-Day 1 of an ongoing build.
+Day 2 of an ongoing build.
 
 - [x] Custom audio player: play/pause, seek, 10s skip, speed control
 - [x] Keyboard shortcuts (space, arrows)
 - [x] Local file loading
-- [ ] Waveform rendering via Web Audio API
+- [x] Waveform rendering via Web Audio API
 - [ ] Click-to-seek on the waveform
 - [ ] Transcript panel synced to playback
 - [ ] HLS playback
