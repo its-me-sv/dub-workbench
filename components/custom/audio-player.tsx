@@ -21,6 +21,8 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
   const [totalDuration, setDuration] = useState(0)
   const [currDuration, setCurrDuration] = useState(0)
   const [currSpeed, setCurrSpeed] = useState("1")
+  const [dragging, setDragging] = useState(false)
+  const wasPlayingBeforeDrag = useRef(false)
 
   const handleChangeFileClick = () => {
     fileInputRef.current?.click()
@@ -66,7 +68,11 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
     const audio = audioRef.current
     if (!audio) return
 
-    audio.currentTime = value[0]
+    if (!dragging) {
+      audio.currentTime = value[0]
+    } else {
+      setCurrDuration(value[0])
+    }
   }
 
   const handleSpeedChange = (value: string) => {
@@ -75,6 +81,26 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
 
     audio.playbackRate = Number(value)
     setCurrSpeed(value)
+  }
+
+  const handleDragStart = () => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    wasPlayingBeforeDrag.current = !audio.paused
+    audio.pause()
+
+    setDragging(true)
+  }
+
+  const handleDragEnd = () => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    if (wasPlayingBeforeDrag.current) audio.play()
+    setDragging(false)
+
+    audio.currentTime = currDuration
   }
 
   useEffect(() => {
@@ -88,6 +114,8 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
     const handleOnLoadMetadata = () => {
       setDuration(audioElement.duration)
       setCurrDuration(0)
+      wasPlayingBeforeDrag.current = false
+      setDragging(false)
     }
     const handleOnTimeUpdate = () => setCurrDuration(audioElement.currentTime)
 
@@ -151,6 +179,8 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
             value={[currDuration]}
             max={totalDuration}
             onValueChange={handleSliderChange}
+            onPointerDown={handleDragStart}
+            onPointerUp={handleDragEnd}
           />
           <div className="flex w-full items-center justify-between text-sm tracking-wide text-muted-foreground">
             <span>{formatSeconds(currDuration)}</span>
