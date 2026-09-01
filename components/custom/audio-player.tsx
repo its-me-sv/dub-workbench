@@ -12,7 +12,13 @@ import PlayIcon from "@hugeicons/core-free-icons/PlayIcon"
 import PauseIcon from "@hugeicons/core-free-icons/PauseIcon"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useEffect, useRef, useState } from "react"
-import { cn } from "@/lib/utils"
+import {
+  cn,
+  extractWaveformFromChannelData,
+  formatSeconds,
+  generateWaveform,
+  getMonoChannelData,
+} from "@/lib/utils"
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -23,6 +29,11 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
   const [currSpeed, setCurrSpeed] = useState("1")
   const [dragging, setDragging] = useState(false)
   const wasPlayingBeforeDrag = useRef(false)
+  const waveformContainerRef = useRef<HTMLDivElement>(null)
+  const waveformCanvasRef = useRef<HTMLCanvasElement>(null)
+  const [waveformBarsCount, setWaveformBarsCount] = useState(0)
+  const channelDataRef = useRef<Float32Array<ArrayBuffer> | null>(null)
+  const [isChannelDataReady, setIsChannelDataReady] = useState(false)
 
   const handleChangeFileClick = () => {
     fileInputRef.current?.click()
@@ -103,8 +114,17 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
     audio.currentTime = currDuration
   }
 
+  // extracting and saving file into audio
   useEffect(() => {
     if (!file) return
+
+    const getChannelData = async () => {
+      const buffer = await file.arrayBuffer()
+      const audioBuffer = await new AudioContext().decodeAudioData(buffer)
+      channelDataRef.current = getMonoChannelData(audioBuffer)
+      setIsChannelDataReady(true)
+    }
+    getChannelData()
 
     const url = URL.createObjectURL(file)
     const audioElement = new Audio(url)
@@ -112,6 +132,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
     audioRef.current = audioElement
 
     const handleOnLoadMetadata = () => {
+      console.log("loaded metadata", audioElement.duration)
       setDuration(audioElement.duration)
       setCurrDuration(0)
       wasPlayingBeforeDrag.current = false
@@ -142,11 +163,55 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
       audioElement.src = ""
       URL.revokeObjectURL(url)
       audioRef.current = null
+      setIsChannelDataReady(false)
+      channelDataRef.current = null
     }
   }, [file])
 
+  // throttling and getting the waveform bars count
+  useEffect(() => {
+    const waveformDiv = waveformContainerRef.current
+    if (!waveformDiv) return
+
+    let frame: number | null = null
+    let latestWidth = waveformDiv.getBoundingClientRect().width
+
+    const observer = new ResizeObserver(([entry]) => {
+      latestWidth = entry.contentRect.width
+      if (frame !== null) return
+
+      frame = requestAnimationFrame(() => {
+        frame = null
+        setWaveformBarsCount(Math.floor(latestWidth))
+      })
+    })
+
+    observer.observe(waveformDiv)
+
+    return () => {
+      observer.disconnect()
+      if (frame !== null) cancelAnimationFrame(frame)
+    }
+  }, [])
+
+  // painting the canvas with the waveform
+  useEffect(() => {
+    if (
+      channelDataRef.current === null ||
+      !waveformBarsCount ||
+      !waveformCanvasRef.current ||
+      !isChannelDataReady
+    )
+      return
+    const waveforms = extractWaveformFromChannelData(
+      channelDataRef.current,
+      waveformBarsCount
+    )
+    generateWaveform(waveformCanvasRef.current, waveforms)
+  }, [isChannelDataReady, waveformBarsCount])
+
   return (
-    <Card className="w-[42svw]">
+    <Card className="w-[36svw]">
       <CardHeader className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <HugeiconsIcon icon={FileMusicIcon} color="var(--primary)" />
@@ -168,10 +233,11 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
           />
         </>
       </CardHeader>
-      <div className="mx-(--card-spacing) flex h-[14svh] items-center justify-center rounded-xl border-2 border-dotted border-border">
-        <p className="text-sm text-muted-foreground">
-          Waveform will be displayed here.
-        </p>
+      <div
+        ref={waveformContainerRef}
+        className="mx-(--card-spacing) flex h-[14svh] items-center justify-center rounded-xl border-2 border-dotted border-border"
+      >
+        <canvas ref={waveformCanvasRef} className="h-full w-full" />
       </div>
       <CardFooter className="flex-col gap-(--card-spacing)">
         <div className="flex w-full flex-col gap-1">
@@ -266,11 +332,3 @@ interface AudioPlayerProps {
 }
 
 const SPEEDS = [0.5, 1, 1.25, 1.5, 2]
-
-const formatSeconds = (seconds: number): string => {
-  const hours = String(Math.floor(seconds / 3600)).padStart(2, "0")
-  const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0")
-  const leftOutSeconds = String(Math.floor(seconds % 60)).padStart(2, "0")
-
-  return `${hours[1] !== "0" ? hours : ""}${minutes}:${leftOutSeconds}`
-}
