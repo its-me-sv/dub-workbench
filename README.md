@@ -1,21 +1,39 @@
-# Next.js template
+# Dub Workbench
 
-This is a Next.js template with shadcn/ui.
+A small audio workbench I'm building to get hands-on with browser audio: custom playback, waveform rendering, and eventually a transcript synced to the audio.
 
-## Adding components
+**Live:** https://dub-workbench.vercel.app/
 
-To add components to your app, run the following command:
+## Why
+
+I've spent two years on product frontend (Next.js, TypeScript, multi-tenant dashboards) but never on media-heavy interfaces. This is me closing that gap by building rather than reading about it.
+
+Everything here is written from scratch. No player library, no waveform library. The point is to understand the primitives, so pulling in wavesurfer would defeat the exercise.
+
+## Status
+
+Day 1 of an ongoing build.
+
+- [x] Custom audio player: play/pause, seek, 10s skip, speed control
+- [x] Keyboard shortcuts (space, arrows)
+- [x] Local file loading
+- [ ] Waveform rendering via Web Audio API
+- [ ] Click-to-seek on the waveform
+- [ ] Transcript panel synced to playback
+- [ ] HLS playback
+- [ ] CAMB.AI API integration for TTS and dubbing
+
+## Stack
+
+Next.js (App Router), TypeScript, Tailwind, Shadcn
+
+## Running locally
 
 ```bash
-npx shadcn@latest add button
+npm install
+npm run dev
 ```
 
-This will place the ui components in the `components` directory.
+## Roadmap
 
-## Using components
-
-To use the components in your app, import them as follows:
-
-```tsx
-import { Button } from "@/components/ui/button";
-```
+Waveform next, then transcript sync, then wiring it to a real dubbing API.
