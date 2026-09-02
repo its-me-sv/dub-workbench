@@ -10,7 +10,6 @@ import GoBackward10SecIcon from "@hugeicons/core-free-icons/GoBackward10SecIcon"
 import GoForward10SecIcon from "@hugeicons/core-free-icons/GoForward10SecIcon"
 import PlayIcon from "@hugeicons/core-free-icons/PlayIcon"
 import PauseIcon from "@hugeicons/core-free-icons/PauseIcon"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useEffect, useRef, useState } from "react"
 import {
   cn,
@@ -20,6 +19,7 @@ import {
   getMonoChannelData,
 } from "@/lib/utils"
 import { Skeleton } from "../ui/skeleton"
+import SpeedController from "./speed-controller"
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -247,7 +247,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
           />
         </>
       </CardHeader>
-      <CardFooter className="flex-col gap-(--card-spacing)">
+      <CardFooter className="flex-col gap-[calc(var(--card-spacing)-1rem)]">
         <div className="flex w-full flex-col">
           <div
             ref={waveformContainerRef}
@@ -257,7 +257,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
               <div className="relative flex h-full w-full">
                 <canvas
                   ref={waveformCanvasRef}
-                  className="z-10 h-full w-full cursor-pointer bg-secondary/40"
+                  className="z-10 h-full w-full cursor-pointer bg-muted"
                   onClick={handleWaveFormClick}
                 />
                 <div
@@ -329,27 +329,10 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
               <HugeiconsIcon icon={GoForward10SecIcon} color="var(--primary)" />
             </Button>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Speed</span>
-            <ToggleGroup
-              type="single"
-              size="sm"
-              variant="outline"
-              spacing={0}
-              value={currSpeed}
-              onValueChange={handleSpeedChange}
-            >
-              {SPEEDS.map(String).map((speed) => (
-                <ToggleGroupItem
-                  key={speed}
-                  value={speed}
-                  className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                >
-                  {speed}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
+          <SpeedController
+            handleSpeedChange={handleSpeedChange}
+            currSpeed={currSpeed}
+          />
         </div>
       </CardFooter>
     </Card>
@@ -362,5 +345,3 @@ interface AudioPlayerProps {
   file: File
   setFile: React.Dispatch<React.SetStateAction<File | undefined>>
 }
-
-const SPEEDS = [0.5, 1, 1.25, 1.5, 2]
