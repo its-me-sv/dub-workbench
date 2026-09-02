@@ -115,6 +115,19 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
     audio.currentTime = currDuration
   }
 
+  const handleWaveFormClick = (
+    e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+  ) => {
+    const audio = audioRef.current
+    const waveformDiv = waveformContainerRef.current
+    if (!audio || !waveformDiv) return
+
+    const rect = waveformDiv.getBoundingClientRect()
+    const ratio = (e.clientX - rect.left) / rect.width
+
+    audio.currentTime = ratio * totalDuration
+  }
+
   // extracting and saving file into audio
   useEffect(() => {
     if (!file) return
@@ -206,7 +219,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
       return
     const waveforms = extractWaveformFromChannelData(
       channelDataRef.current,
-      waveformBarsCount
+      Math.max(waveformBarsCount, 360)
     )
     generateWaveform(waveformCanvasRef.current, waveforms)
   }, [isChannelDataReady, waveformBarsCount])
@@ -235,28 +248,39 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ setFile, file }) => {
         </>
       </CardHeader>
       <CardFooter className="flex-col gap-(--card-spacing)">
-        <div className="flex w-full flex-col gap-1">
+        <div className="flex w-full flex-col">
           <div
             ref={waveformContainerRef}
-            className="flex h-[14svh] items-center justify-center"
+            className="flex h-[14svh] items-center"
           >
             {isChannelDataReady ? (
-              <canvas
-                ref={waveformCanvasRef}
-                className="h-full w-full bg-muted/30"
-              />
+              <div className="relative flex h-full w-full">
+                <canvas
+                  ref={waveformCanvasRef}
+                  className="z-10 h-full w-full cursor-pointer bg-secondary/40"
+                  onClick={handleWaveFormClick}
+                />
+                <div
+                  className="absolute z-10 h-full bg-primary/10"
+                  style={{
+                    width: `${(currDuration / totalDuration) * 100}%`,
+                  }}
+                />
+              </div>
             ) : (
               <Skeleton className="h-full w-full rounded-none" />
             )}
           </div>
           <Slider
+            hideThumb
             value={[currDuration]}
             max={totalDuration}
             onValueChange={handleSliderChange}
             onPointerDown={handleDragStart}
             onPointerUp={handleDragEnd}
+            trackClassName="rounded-none"
           />
-          <div className="flex w-full items-center justify-between text-sm tracking-wide text-muted-foreground">
+          <div className="mt-1 flex w-full items-center justify-between text-sm tracking-wide text-muted-foreground">
             <span>{formatSeconds(currDuration)}</span>
             <span>{formatSeconds(totalDuration - currDuration + 1)}</span>
           </div>
